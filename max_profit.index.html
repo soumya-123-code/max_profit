@@ -1,20 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Mars Land Max Profit Calculator</title>
+  <title>Mars Land Max Profit</title>
 </head>
 <body>
-  <h1>Mars Land Max Profit Calculator</h1>
-  
-  <label for="timeInput">Enter Total Time Units:</label>
-  <input type="number" id="timeInput" min="1" value="7" />
+
+  <h2>Mars Land Max Profit Calculator</h2>
+
+  <label>Total Time Units:</label>
+  <input id="timeInput" type="number" value="49" min="1" />
   <button onclick="calculateProfit()">Calculate</button>
 
-  <h2>Results:</h2>
-  <div id="result"></div>
+  <div id="result" style="margin-top:20px;"></div>
 
   <script>
-    class MarsLandProfit {
+    class MarsLandProfitAll {
       constructor(totalTime) {
         this.totalTime = totalTime;
         this.buildings = [
@@ -22,20 +22,18 @@
           { type: 'P', time: 4, earning: 1000 },
           { type: 'C', time: 10, earning: 3000 }
         ];
-
         this.dp = [];
-        this.choice = [];
-
+        this.choices = [];
         for (let i = 0; i <= totalTime; i++) {
           this.dp[i] = 0;
-          this.choice[i] = null;
+          this.choices[i] = [];
         }
       }
 
       calculate() {
         for (let t = this.totalTime - 1; t >= 0; t--) {
           let maxEarn = this.dp[t];
-          let bestBuild = null;
+          let bestChoices = [];
 
           for (let i = 0; i < this.buildings.length; i++) {
             let b = this.buildings[i];
@@ -43,72 +41,108 @@
 
             if (finish <= this.totalTime) {
               let earn = (this.totalTime - finish) * b.earning + this.dp[finish];
+
               if (earn > maxEarn) {
                 maxEarn = earn;
-                bestBuild = b.type;
+                bestChoices = [b.type];
+              } else if (earn === maxEarn) {
+                if (!bestChoices.includes(b.type)) {
+                  bestChoices.push(b.type);
+                }
               }
             }
           }
-
           this.dp[t] = maxEarn;
-          this.choice[t] = bestBuild;
+          this.choices[t] = bestChoices;
         }
       }
 
-      getSolution() {
-        let t = 0;
-        let result = { T: 0, P: 0, C: 0 };
+      backtrack(time = 0, path = [], allPaths = []) {
+        if (time >= this.totalTime) {
+          allPaths.push(path.slice());
+          return;
+        }
 
-        while (t < this.totalTime && this.choice[t] !== null) {
-          let bType = this.choice[t];
+        if (!this.choices[time] || this.choices[time].length === 0) {
+          allPaths.push(path.slice());
+          return;
+        }
+
+        for (let i = 0; i < this.choices[time].length; i++) {
+          let bType = this.choices[time][i];
           let bTime = 0;
 
-          for (let i = 0; i < this.buildings.length; i++) {
-            if (this.buildings[i].type === bType) {
-              bTime = this.buildings[i].time;
+          for (let j = 0; j < this.buildings.length; j++) {
+            if (this.buildings[j].type === bType) {
+              bTime = this.buildings[j].time;
               break;
             }
           }
 
-          result[bType] = result[bType] + 1;
-          t = t + bTime;
+          path.push(bType);
+          this.backtrack(time + bTime, path, allPaths);
+          path.pop();
         }
-
-        return result;
       }
 
-      getMaxProfit() {
+      sequencesToCounts(sequences) {
+        let uniqueCounts = [];
+        let seen = {};
+
+        for (let seq of sequences) {
+          let counts = { T: 0, P: 0, C: 0 };
+          for (let b of seq) counts[b]++;
+          let key = `T${counts.T}P${counts.P}C${counts.C}`;
+          if (!seen[key]) {
+            seen[key] = true;
+            uniqueCounts.push(counts);
+          }
+        }
+        return uniqueCounts;
+      }
+
+      getAllMaxProfitSolutions() {
         this.calculate();
+
+        let allSequences = [];
+        this.backtrack(0, [], allSequences);
+
+        let uniqueCounts = this.sequencesToCounts(allSequences);
+
         return {
-          earnings: this.dp[0],
-          buildings: this.getSolution()
+          maxEarnings: this.dp[0],
+          solutions: uniqueCounts
         };
       }
     }
 
     function calculateProfit() {
-      const timeInput = document.getElementById('timeInput').value;
-      const totalTime = parseInt(timeInput);
+      let input = document.getElementById('timeInput').value;
+      let time = parseInt(input);
 
-      if (isNaN(totalTime) || totalTime <= 0) {
-        alert('Please enter a valid positive number for time units.');
+      let resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = '';
+
+      if (isNaN(time) || time <= 0) {
+        resultDiv.innerHTML = 'Please enter a positive number.';
         return;
       }
 
-      const marsProfit = new MarsLandProfit(totalTime);
-      const result = marsProfit.getMaxProfit();
+      let marsProfit = new MarsLandProfitAll(time);
+      let result = marsProfit.getAllMaxProfitSolutions();
 
-      const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = `
-        <p><strong>Total Earnings:</strong> $${result.earnings}</p>
-        <p><strong>Buildings Built:</strong></p>
-        <ul>
-          <li>Theatres (T): ${result.buildings.T}</li>
-          <li>Pubs (P): ${result.buildings.P}</li>
-          <li>Commercial Parks (C): ${result.buildings.C}</li>
-        </ul>
-      `;
+      let html = `<p><b>Max Earnings:</b> $${result.maxEarnings}</p>`;
+      html += `<p><b>Number of Solutions:</b> ${result.solutions.length}</p>`;
+      html += `<p><b>Building combinations:</b></p><ul>`;
+
+      for (let sol of result.solutions) {
+        html += `<li>T: ${sol.T}, P: ${sol.P}, C: ${sol.C}</li>`;
+      }
+      html += '</ul>';
+
+      resultDiv.innerHTML = html;
     }
   </script>
+
 </body>
 </html>
