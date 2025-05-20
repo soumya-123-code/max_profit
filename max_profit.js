@@ -1,62 +1,81 @@
-function maxProfit(n) {
-  var buildings = [
-    {name: 'T', time: 5, earning: 1500},
-    {name: 'P', time: 4, earning: 1000},
-    {name: 'C', time: 10, earning: 3000}
-  ];
+class MarsLandProfit {
+  constructor(totalTime) {
+    this.totalTime = totalTime;
+    this.buildings = [
+      { type: 'T', time: 5, earning: 1500 },
+      { type: 'P', time: 4, earning: 1000 },
+      { type: 'C', time: 10, earning: 3000 }
+    ];
 
-  var dp = [];
-  var choice = [];
+    this.dp = [];
+    this.choice = [];
 
-  for (var i = 0; i <= n; i++) {
-    dp[i] = 0;
-    choice[i] = null;
+    for (let i = 0; i <= totalTime; i++) {
+      this.dp[i] = 0;
+      this.choice[i] = null;
+    }
   }
 
-  for (var time = n - 1; time >= 0; time--) {
-    var maxEarn = dp[time];
-    var bestChoice = null;
+  calculate() {
+    for (let t = this.totalTime - 1; t >= 0; t--) {
+      let maxEarn = this.dp[t];
+      let bestBuild = null;
 
-    for (var i = 0; i < buildings.length; i++) {
-      var b = buildings[i];
-      var finishTime = time + b.time;
-      if (finishTime <= n) {
-        var earn = (n - finishTime) * b.earning + dp[finishTime];
-        if (earn > maxEarn) {
-          maxEarn = earn;
-          bestChoice = b.name;
+      for (let i = 0; i < this.buildings.length; i++) {
+        let b = this.buildings[i];
+        let finish = t + b.time;
+
+        if (finish <= this.totalTime) {
+          let earn = (this.totalTime - finish) * b.earning + this.dp[finish];
+          if (earn > maxEarn) {
+            maxEarn = earn;
+            bestBuild = b.type;
+          }
         }
       }
-    }
 
-    dp[time] = maxEarn;
-    choice[time] = bestChoice;
+      this.dp[t] = maxEarn;
+      this.choice[t] = bestBuild;
+    }
   }
 
-  var time = 0;
-  var count = {T: 0, P: 0, C: 0};
+  getSolution() {
+    let t = 0;
+    let result = { T: 0, P: 0, C: 0 };
 
-  while (time < n && choice[time] !== null) {
-    var bName = choice[time];
-    var b = null;
+    while (t < this.totalTime && this.choice[t] !== null) {
+      let bType = this.choice[t];
+      let bTime = 0;
 
-    for (var i = 0; i < buildings.length; i++) {
-      if (buildings[i].name === bName) {
-        b = buildings[i];
-        break;
+      for (let i = 0; i < this.buildings.length; i++) {
+        if (this.buildings[i].type === bType) {
+          bTime = this.buildings[i].time;
+          break;
+        }
       }
+
+      result[bType] = result[bType] + 1;
+      t = t + bTime;
     }
 
-    count[bName] = count[bName] + 1;
-    time = time + b.time;
+    return result;
   }
 
-  return {
-    earnings: dp[0],
-    solution: count
-  };
+  getMaxProfit() {
+    this.calculate();
+    return {
+      earnings: this.dp[0],
+      buildings: this.getSolution()
+    };
+  }
 }
 
-console.log(maxProfit(7));
-console.log(maxProfit(8));
-console.log(maxProfit(13));
+
+let profit7 = new MarsLandProfit(7);
+console.log(profit7.getMaxProfit());
+
+let profit8 = new MarsLandProfit(8);
+console.log(profit8.getMaxProfit());
+
+let profit13 = new MarsLandProfit(13);
+console.log(profit13.getMaxProfit());
