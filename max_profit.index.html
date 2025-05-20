@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mars Land Max Profit Calculator</title>
+</head>
+<body>
+  <h1>Mars Land Max Profit Calculator</h1>
+  
+  <label for="timeInput">Enter Total Time Units:</label>
+  <input type="number" id="timeInput" min="1" value="7" />
+  <button onclick="calculateProfit()">Calculate</button>
+
+  <h2>Results:</h2>
+  <div id="result"></div>
+
+  <script>
+    class MarsLandProfit {
+      constructor(totalTime) {
+        this.totalTime = totalTime;
+        this.buildings = [
+          { type: 'T', time: 5, earning: 1500 },
+          { type: 'P', time: 4, earning: 1000 },
+          { type: 'C', time: 10, earning: 3000 }
+        ];
+
+        this.dp = [];
+        this.choice = [];
+
+        for (let i = 0; i <= totalTime; i++) {
+          this.dp[i] = 0;
+          this.choice[i] = null;
+        }
+      }
+
+      calculate() {
+        for (let t = this.totalTime - 1; t >= 0; t--) {
+          let maxEarn = this.dp[t];
+          let bestBuild = null;
+
+          for (let i = 0; i < this.buildings.length; i++) {
+            let b = this.buildings[i];
+            let finish = t + b.time;
+
+            if (finish <= this.totalTime) {
+              let earn = (this.totalTime - finish) * b.earning + this.dp[finish];
+              if (earn > maxEarn) {
+                maxEarn = earn;
+                bestBuild = b.type;
+              }
+            }
+          }
+
+          this.dp[t] = maxEarn;
+          this.choice[t] = bestBuild;
+        }
+      }
+
+      getSolution() {
+        let t = 0;
+        let result = { T: 0, P: 0, C: 0 };
+
+        while (t < this.totalTime && this.choice[t] !== null) {
+          let bType = this.choice[t];
+          let bTime = 0;
+
+          for (let i = 0; i < this.buildings.length; i++) {
+            if (this.buildings[i].type === bType) {
+              bTime = this.buildings[i].time;
+              break;
+            }
+          }
+
+          result[bType] = result[bType] + 1;
+          t = t + bTime;
+        }
+
+        return result;
+      }
+
+      getMaxProfit() {
+        this.calculate();
+        return {
+          earnings: this.dp[0],
+          buildings: this.getSolution()
+        };
+      }
+    }
+
+    function calculateProfit() {
+      const timeInput = document.getElementById('timeInput').value;
+      const totalTime = parseInt(timeInput);
+
+      if (isNaN(totalTime) || totalTime <= 0) {
+        alert('Please enter a valid positive number for time units.');
+        return;
+      }
+
+      const marsProfit = new MarsLandProfit(totalTime);
+      const result = marsProfit.getMaxProfit();
+
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = `
+        <p><strong>Total Earnings:</strong> $${result.earnings}</p>
+        <p><strong>Buildings Built:</strong></p>
+        <ul>
+          <li>Theatres (T): ${result.buildings.T}</li>
+          <li>Pubs (P): ${result.buildings.P}</li>
+          <li>Commercial Parks (C): ${result.buildings.C}</li>
+        </ul>
+      `;
+    }
+  </script>
+</body>
+</html>
