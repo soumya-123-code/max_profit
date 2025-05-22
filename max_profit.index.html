@@ -32,7 +32,7 @@
 
       calculate() {
         for (let t = this.totalTime - 1; t >= 0; t--) {
-          let maxEarn = this.dp[t];
+          let maxEarn = this.dp[t + 1];
           let bestChoices = [];
 
           for (let i = 0; i < this.buildings.length; i++) {
@@ -40,18 +40,20 @@
             let finish = t + b.time;
 
             if (finish <= this.totalTime) {
-              let earn = (this.totalTime - finish) * b.earning + this.dp[finish];
+              let operationalTime = this.totalTime - finish;
+              let earn = operationalTime * b.earning + this.dp[finish];
 
               if (earn > maxEarn) {
                 maxEarn = earn;
                 bestChoices = [b.type];
-              } else if (earn === maxEarn) {
+              } else if (earn === maxEarn && earn > this.dp[t + 1]) {
                 if (!bestChoices.includes(b.type)) {
                   bestChoices.push(b.type);
                 }
               }
             }
           }
+          
           this.dp[t] = maxEarn;
           this.choices[t] = bestChoices;
         }
@@ -63,25 +65,26 @@
           return;
         }
 
-        if (!this.choices[time] || this.choices[time].length === 0) {
-          allPaths.push(path.slice());
-          return;
+        if (this.dp[time] === this.dp[time + 1]) {
+          this.backtrack(time + 1, path, allPaths);
         }
 
-        for (let i = 0; i < this.choices[time].length; i++) {
-          let bType = this.choices[time][i];
-          let bTime = 0;
+        if (this.choices[time] && this.choices[time].length > 0) {
+          for (let i = 0; i < this.choices[time].length; i++) {
+            let bType = this.choices[time][i];
+            let bTime = 0;
 
-          for (let j = 0; j < this.buildings.length; j++) {
-            if (this.buildings[j].type === bType) {
-              bTime = this.buildings[j].time;
-              break;
+            for (let j = 0; j < this.buildings.length; j++) {
+              if (this.buildings[j].type === bType) {
+                bTime = this.buildings[j].time;
+                break;
+              }
             }
-          }
 
-          path.push(bType);
-          this.backtrack(time + bTime, path, allPaths);
-          path.pop();
+            path.push(bType);
+            this.backtrack(time + bTime, path, allPaths);
+            path.pop();
+          }
         }
       }
 
@@ -141,7 +144,27 @@
       html += '</ul>';
 
       resultDiv.innerHTML = html;
+
+      console.log(`Time: ${time}, Max Earnings: ${result.maxEarnings}, Solutions:`, result.solutions);
     }
+
+    function runTests() {
+      let test1 = new MarsLandProfitAll(7);
+      let result1 = test1.getAllMaxProfitSolutions();
+      console.log("Test 1 (Time 7):", result1);
+      
+      let test2 = new MarsLandProfitAll(8);
+      let result2 = test2.getAllMaxProfitSolutions();
+      console.log("Test 2 (Time 8):", result2);
+      
+      let test3 = new MarsLandProfitAll(13);
+      let result3 = test3.getAllMaxProfitSolutions();
+      console.log("Test 3 (Time 13):", result3);
+    }
+
+    window.onload = function() {
+      runTests();
+    };
   </script>
 
 </body>
